@@ -71,11 +71,11 @@ class ConditionChecker
         $now = new \DateTime("now");
         if ($now->format("H") > 12 && $this->checkEnergyLowRate() && isset($conf['minRunTime'])) {
             $runTime = null;
-            if ($deviceClass == "EdiMax") {
+            if ($this->deviceClass == "EdiMax") {
                 $runTime = $this->em->getRepository("AppBundle:EdiMaxDataStore")->getActiveDuration($this->ip);
-            } elseif($deviceClass == "MyStrom") {
+            } elseif($this->deviceClass == "MyStrom") {
                 $runTime = $this->em->getRepository("AppBundle:MyStromDataStore")->getActiveDuration($this->ip);
-            } elseif($deviceClass == "Shelly") {
+            } elseif($this->deviceClass == "Shelly") {
                 $runTime = $this->em->getRepository("AppBundle:ShellyDataStore")->getActiveDuration($this->ip);
             }
             if ($runTime !== null && $runTime < $conf['minRunTime']) {

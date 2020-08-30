@@ -108,41 +108,49 @@ class MyStromConnector
     public function getAll()
     {
         $results = [];
-        $today = new \DateTime('today');
-        $now = new \DateTime();
+
         if (array_key_exists('mystrom', $this->connectors) && is_array($this->connectors['mystrom'])) {
             foreach ($this->connectors['mystrom'] as $device) {
-                $status = $this->getStatus($device);
-                $mode = $this->em->getRepository('AppBundle:Settings')->getMode($device['ip']);
-                if (isset($device['nominalPower'])) {
-                    $nominalPower = $device['nominalPower'];
-                } else {
-                    $nominalPower = 0;
-                }
-                if (isset($device['autoIntervals'])) {
-                    $autoIntervals = $device['autoIntervals'];
-                } else {
-                    $autoIntervals = [];
-                }
-                if (isset($device['type'])) {
-                    $type = $device['type'];
-                } else {
-                    $type = 'relay';
-                }
-                $results[] = [
-                    'ip' => $device['ip'],
-                    'name' => $device['name'],
-                    'type' => $type,
-                    'status' => $status,
-                    'nominalPower' => $nominalPower,
-                    'autoIntervals' => $autoIntervals,
-                    'mode' => $mode,
-                    'activeMinutes' => $this->em->getRepository('AppBundle:MyStromDataStore')->getActiveDuration($device['ip'], $today, $now),
-                ];
+                $results[] = $this->getOne($device);
             }
         }
 
         return $results;
+    }
+
+    public function getOne($device)
+    {
+        $today = new \DateTime('today');
+        $now = new \DateTime();
+
+        $status = $this->getStatus($device);
+        $mode = $this->em->getRepository('AppBundle:Settings')->getMode($device['ip']);
+        if (isset($device['nominalPower'])) {
+            $nominalPower = $device['nominalPower'];
+        } else {
+            $nominalPower = 0;
+        }
+        if (isset($device['autoIntervals'])) {
+            $autoIntervals = $device['autoIntervals'];
+        } else {
+            $autoIntervals = [];
+        }
+        if (isset($device['type'])) {
+            $type = $device['type'];
+        } else {
+            $type = 'relay';
+        }
+
+        return [
+            'ip' => $device['ip'],
+            'name' => $device['name'],
+            'type' => $type,
+            'status' => $status,
+            'nominalPower' => $nominalPower,
+            'autoIntervals' => $autoIntervals,
+            'mode' => $mode,
+            'activeMinutes' => $this->em->getRepository('AppBundle:MyStromDataStore')->getActiveDuration($device['ip'], $today, $now),
+        ];
     }
 
     public function activateAllPIR()

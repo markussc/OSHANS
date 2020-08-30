@@ -66,7 +66,8 @@
     {% if currentStat['shelly']|default([])|length > 0 %}
         <div class="small-6 medium-4 columns refresh" style="margin-top:0.5em;" id="shelly">
         <h4><i class="fas fa-toggle-on" style="font-size:2em; color:#1f618d ;"></i></h4>
-        {% for key, device in currentStat['shelly'] %}
+        {% for key, device in currentStat['shelly'] if (device['type'] == "roller" or device['type'] == "relay") %}
+            {% if not loop.first %}<br/>{% endif %}
             {% if device['status']['val']|default(100) < 2 %}
                 <a href="javascript:void(0);" class="button tiny" style="border-radius:5px;" {% if is_granted('ROLE_OWNER') %}onclick="sendCommand(['shelly', {{ key }}, {{ (device['status']['val'] + 1) % 2 }}])"{% endif %}><i class="fas fa-power-off" style="color:{% if device['status']['val'] %}green{% else %}red{% endif %}"></i></a>
                 <a href="javascript:void(0);" class="button tiny" style="border-radius:5px;{% if not (device['nominalPower']|default(false) or device['autoIntervals']|default(false)) %}visibility:hidden;{% endif %}}}" {% if is_granted('ROLE_OWNER') %}onclick="sendCommand(['settings', 'mode', '{{ device['ip'] }}_{{ device['port'] }}', {{ (device['mode'] + 1) % 2 }}])"{% endif %}><i class="fas {% if device['mode'] %}fa-lock{% else %}fa-lock-open{% endif %}"></i></a>
@@ -78,12 +79,11 @@
                 <a href="javascript:void(0);" class="button tiny" style="border-radius:5px;" {% if is_granted('ROLE_OWNER') %}onclick="sendCommand(['shelly', {{ key }}, -1]);"{% endif %}><i class="fas fa-stop-circle"></i></a>
             {% endif %}
             {{ device['name']}}
-            {% if not loop.last %}<br/>{% endif %}
         {% endfor %}
         </div>
     {% endif %}
-    {% if currentStat['mobileAlerts']|default([])|length > 0 or currentStat['mystrom']|default([])|length > 0 %}
-        {% if mobilealertsConnector.contactAvailable()|default(false) or mystromConnector.motionAvailable|default(false) %}
+    {% if currentStat['mobileAlerts']|default([])|length > 0 or currentStat['mystrom']|default([])|length > 0 or currentStat['shelly']|default([])|length > 0 %}
+        {% if mobilealertsConnector.contactAvailable()|default(false) or mystromConnector.motionAvailable|default(false) or shellyConnector.doorAvailable()|default(false) %}
         <div class="small-6 medium-4 columns refresh" style="margin-top:0.5em;" id="alarm">
         <h4><i class="fas fa-eye" style="font-size:2em; color:#c40e0e ;"></i></h4>
         {% if connectors['threema']|default([])|length > 0 %}
@@ -99,6 +99,9 @@
                     {% if measurement['value'] == 'label.device.status.closed' %}<i class="fas fa-door-closed" style="color:green"></i>{% else %}<i class="fas fa-door-open" style="color:red"></i>{% endif %} {% if ('now'|date('U') - maTimestamp['date']|date('U'))/60/60 > 24 %}<i class="fas fa-hourglass-end" style="color:orange"></i>{% endif %} {{ measurement['label'] }}<br/>
                 {% endif %}
             {% endfor %}
+        {% endfor %}
+        {% for shellySensor in currentStat['shelly']|default([]) if shellySensor['type'] == "door" %}
+            {% if shellySensor['status']['label']|default("") == 'label.device.status.closed' %}<i class="fas fa-door-closed" style="color:green"></i>{% else %}<i class="fas fa-door-open" style="color:red"></i>{% endif %} {% if ('now'|date('U') - shellySensor['timestamp']|default(0)|date('U'))/60/60 > 24 %}<i class="fas fa-hourglass-end" style="color:orange"></i>{% endif %} {{ shellySensor['name'] }}<br/>
         {% endfor %}
         {% for motionSensor in currentStat['mystrom']|default([]) if motionSensor['type']|default('') == 'motion' %}
         {% if not motionSensor['status']['val']|default(false) %}<i class="fas fa-male" style="color:green"></i>{% else %}<i class="fas fa-running" style="color:red"></i>{% endif %} {{ motionSensor['name'] }}<br/>

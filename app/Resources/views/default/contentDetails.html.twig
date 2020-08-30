@@ -136,7 +136,7 @@
     </ul>
 </div>
 {% endif %}
-{% if contactAvailable|default(false) %}
+{% if mobilealertsConnector.contactAvailable()|default(false) or mystromConnector.motionAvailable|default(false) or shellyConnector.doorAvailable()|default(false) %}
 <div class="small-12 medium-3 columns refresh" id="alarm">
     <h4>{% trans %}label.alarm{% endtrans %}</h4>
     <ul>
@@ -144,6 +144,12 @@
         {% for measurement in maSensor if measurement['label'] != 'timestamp' and measurement['usage']|default('') == 'contact' %}
             <li>{{ measurement['label']}}: {{ measurement['value']|trans }}</li>
         {% endfor %}
+    {% endfor %}
+    {% for shellySensor in currentStat['shelly']|default([]) if shellySensor['type'] == "door" %}
+        <li>{{ shellySensor['name'] }}: {{ shellySensor['status']['label']|trans }}</li>
+    {% endfor %}
+    {% for motionSensor in currentStat['mystrom']|default([]) if motionSensor['type']|default('') == 'motion' %}
+    <li>{{ motionSensor['name'] }}: {{ motionSensor['status']['label']|trans }}</li>
     {% endfor %}
     </ul>
 </div>

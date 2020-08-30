@@ -480,12 +480,15 @@ class DefaultController extends Controller
 
     /**
      * trigger by external event
-     * @Route("/trigger/{deviceId}", name="trigger")
+     * @Route("/trigger/{deviceId}/{action}", defaults={"deviceId"=null, "action"=null}, name="trigger")
      */
-    public function triggerAction(Request $request, LogicProcessor $logic, $deviceId)
+    public function triggerAction(Request $request, LogicProcessor $logic, $deviceId, $action)
     {
-        // init the mystrom device
+        // init the mystrom device if reasonable
         $logic->initMystrom($deviceId);
+
+        // init the shelly device if reasonable
+        $logic->initShelly($deviceId, $action);
 
         // execute auto actions where reasonable
         $logic->autoActionsEdimax();
@@ -501,7 +504,7 @@ class DefaultController extends Controller
     /**
      * interface for external variable requests
      * currently only supports requests for netPower
-     * @Route("/stat/{variable}", name="trigger")
+     * @Route("/stat/{variable}", name="stat")
      */
     public function statAction(Request $request, $variable)
     {

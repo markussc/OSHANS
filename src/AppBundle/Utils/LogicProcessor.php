@@ -328,7 +328,7 @@ class LogicProcessor
                         break;
                     }
                 }
-            } else {
+            } elseif ($shellyConfig['type'] != 'door') {
                 // for switches, check force off and forceOn conditions
                 if($this->conditionchecker->checkCondition($shelly, 'forceOff')) {
                     if ($this->forceOffShelly($deviceId, $shelly)) {
@@ -673,29 +673,70 @@ class LogicProcessor
 
     public function initMystrom($deviceId = null)
     {
-        foreach ($this->mystrom->getAll() as $mystrom) {
-            if ($deviceId && $mystrom['ip'] !== $deviceId) {
-                continue;
+        if ($deviceId !== null) {
+            $device = $this->mystrom->getConfig($deviceId);
+            if ($device) {
+                $mystrom = $this->mystrom->getOne($device);
+                $mystromEntity = new MyStromDataStore();
+                $mystromEntity->setTimestamp(new \DateTime('now'));
+                $mystromEntity->setConnectorId($mystrom['ip']);
+                $mystromEntity->setData($mystrom['status']['val']);
+                $this->em->persist($mystromEntity);
             }
+        }
+        foreach ($this->mystrom->getAll() as $mystrom) {
             $mystromEntity = new MyStromDataStore();
             $mystromEntity->setTimestamp(new \DateTime('now'));
             $mystromEntity->setConnectorId($mystrom['ip']);
             $mystromEntity->setData($mystrom['status']['val']);
             $this->em->persist($mystromEntity);
-            $this->em->flush();
         }
+        $this->em->flush();
     }
 
-    public function initShelly()
+    public function initShelly($deviceId = null, $action = null) // $deviceId is a string in the form ip_port
     {
-        foreach ($this->shelly->getAll() as $shelly) {
-            $shellyEntity = new ShellyDataStore();
-            $shellyEntity->setTimestamp(new \DateTime('now'));
-            $shellyEntity->setConnectorId($shelly['ip'].'_'.$shelly['port']);
-            $shellyEntity->setData($shelly['status']);
-            $this->em->persist($shellyEntity);
-            $this->em->flush();
+        if ($deviceId !== null) {
+            $port = null;
+            $ip_port = explode("_", $deviceId);
+            $ip = $ip_port[0];
+            if (count($ip_port) > 1) {
+                $port = $ip_port[1];
+            } else {
+                $port = null;
+            }
+            $device = $this->shelly->getConfig($ip, $port);
+            if ($device) {
+                if ($action !== null) {
+                    $shelly = $device;
+                    $shelly['status'] = $this->shelly->createStatus($action);
+                } else {
+                    $shelly = $this->shelly->getOne($device);
+                }
+                if (!array_key_exists('port', $shelly)) {
+                    $shelly['port'] = 0;
+                }
+                $shellyEntity = new ShellyDataStore();
+                $shellyEntity->setTimestamp(new \DateTime('now'));
+                $shellyEntity->setConnectorId($shelly['ip'].'_'.$shelly['port']);
+                $shellyEntity->setData($shelly['status']);
+                $this->em->persist($shellyEntity);
+            }
         }
+        else {
+            foreach ($this->shelly->getAll() as $shelly) {
+                if (!array_key_exists('port', $shelly)) {
+                    $shelly['port'] = 0;
+                }
+
+                $shellyEntity = new ShellyDataStore();
+                $shellyEntity->setTimestamp(new \DateTime('now'));
+                $shellyEntity->setConnectorId($shelly['ip'].'_'.$shelly['port']);
+                $shellyEntity->setData($shelly['status']);
+                $this->em->persist($shellyEntity);
+            }
+        }
+        $this->em->flush();
     }
 
     public function initSmartfox()
@@ -780,7 +821,8 @@ class LogicProcessor
     {
         $maAlarms = $this->mobilealerts->getAlarms();
         $msAlarms = $this->mystrom->getAlarms();
-        $alarms = array_merge($maAlarms, $msAlarms);
+        $shAlarms = $this->shelly->getAlarms();
+        $alarms = array_merge($maAlarms, $msAlarms, $shAlarms);
         if (count($alarms)) {
             $alarmSetting = $this->em->getRepository('AppBundle:Settings')->findOneByConnectorId('alarm');
             if(!$alarmSetting) {
@@ -800,5 +842,11 @@ class LogicProcessor
                 }
             }
         }
+    }
+
+    public function configureDevice($deviceId)
+    {
+        // currently only required and available for Shelly Door-Sensors
+        $this->shelly->executeCommand($deviceId, 100);
     }
 }

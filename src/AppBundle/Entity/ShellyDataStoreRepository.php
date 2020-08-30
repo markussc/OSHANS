@@ -7,7 +7,7 @@ namespace AppBundle\Entity;
  */
 class ShellyDataStoreRepository extends DataStoreBaseRepository
 {
-    public function getLatest($connectorId, $status = -1)
+    public function getLatest($connectorId, $status = -1, $roller = false)
     {
         $qb = $this->createQueryBuilder('e')
             ->where('e.connectorId = :connectorId')
@@ -15,7 +15,12 @@ class ShellyDataStoreRepository extends DataStoreBaseRepository
             ->setParameter('connectorId', $connectorId)
             ->setMaxResults(1);
         if ($status != -1) {
-            $qb->andWhere('e.jsonValue LIKE :status')
+            if ($roller) {
+                $like = 'NOT LIKE';
+            } else {
+                $like = 'LIKE';
+            }
+            $qb->andWhere('e.jsonValue '.$like.' :status')
                ->setParameter('status', '%"val":'.$status.'%');
             return $qb->getQuery()->getResult();
         }
@@ -23,7 +28,7 @@ class ShellyDataStoreRepository extends DataStoreBaseRepository
         if (!count($latest)) {
             return 0;
         } else {
-            return $latest[0]->getData();
+            return $latest[0];
         }
     }
 

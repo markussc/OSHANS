@@ -125,7 +125,7 @@ parameters:
                 name: Storen Schlafzimmer
                 ip: 10.12.1.71
                 port: 0
-                type: roller # other type is "relay" (currently untested)
+                type: roller # other types are "relay" and "door"
                 nominalPower: 100
                 minWaitTime: 120 # in minutes
                 autoIntervals: # several intervals for auto control are possible
