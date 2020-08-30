@@ -1,6 +1,7 @@
 {% set contactActive = false %}
 {% set motionActive = false %}
 {% if mobilealertsConnector.getAlarms()|length > 0 %}{% set contactActive = true %}{% endif %}
+{% if shellyConnector.getAlarms()|length > 0 %}{% set contactActive = true %}{% endif %}
 {% if mystromConnector.getAlarms()|length > 0 %}{% set motionActive = true %}{% endif %}
 
 <div class="row">

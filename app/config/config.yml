@@ -48,6 +48,7 @@ twig:
         chromecastConnector: '@AppBundle\Utils\Connectors\ChromecastConnector'
         mobilealertsConnector: '@AppBundle\Utils\Connectors\MobileAlertsConnector'
         mystromConnector: '@AppBundle\Utils\Connectors\MyStromConnector'
+        shellyConnector: '@AppBundle\Utils\Connectors\ShellyConnector'
 
 assetic:
     debug:          '%kernel.debug%'
